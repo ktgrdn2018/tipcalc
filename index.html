@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>KJV Verse of the Day</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(250, 236, 225, .85);
+            border-radius: 10px;
+        }
+
+        .centered-content {
+            text-align: center;
+            margin-top: 20px; /* Adjust this value to move the content down from the top */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Adjusted to align content to the top */
+        }
+
+        #verse-text {
+            font-size: 36px;
+            font-family: "Cavolini", sans-serif;
+            margin: 0 30px 36px;
+            max-width: 1000px;
+            word-wrap: break-word;
+            text-align: center; /* Center-align text */
+        }
+
+
+        #citation {
+            font-size: 36px;
+            font-family: "Cavolini", sans-serif;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .button-container button {
+            font-size: 20px;
+            padding: 10px 20px;
+            background-color: #FAECE1;
+            color: #773400;
+            border: 2px solid #773400;
+            border-radius: 10px;       
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .button-container button:hover {
+            background-color: #773400;
+            color: #FAECE1;
+            border: 2x solid #773400;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="centered-content">
+         <div id="verse-text">Loading...</div>
+         <div id="citation">Citation goes here</div>
+         <div class="button-container">
+            <button id="read-chapter-button" disabled>Read Chapter</button>
+            <button id="show-another-verse-button">Show Another Verse</button>
+        </div>
+    </div>
+</div>
+
+    <script>
+        let dayOfYear; // Define dayOfYear as a global variable
+        let verses = []; // Define verses as a global variable
+        let dailyVerseElement; // Define a global variable for the daily verse
+        let usedVerses = []; // Array to store used verses
+
+        // Function to get the URL for the full chapter based on the book and chapter
+        function getChapterURL(book, chapter) {
+            const formattedBook = book.replace(/ /g, '-'); // Replace spaces with dashes
+            return `https://www.kingjamesbibleonline.org/${formattedBook}-Chapter-${chapter}/`;
+        }
+
+        // Function to display a random verse
+        function displayRandomVerse() {
+            // Get a random verse that hasn't been used
+            let randomVerse;
+            do {
+                randomVerse = verses[Math.floor(Math.random() * verses.length)];
+            } while (usedVerses.includes(randomVerse));
+
+            // Check is randomVerse is defined
+            if (randomVerse) {
+                // Add the verse to the usedVerses array
+                usedVerses.push(randomVerse);
+
+                // Display the selected verse and citation
+                const verseTextElement = document.getElementById("verse-text");
+                const citationElement = document.getElementById("citation");
+                
+                citationElement.innerHTML = randomVerse.citation; // Update the citation
+                verseTextElement.innerHTML = randomVerse.text; // Only the text of the verse
+                dailyVerseElement = randomVerse;
+            
+                // If all verses have been used, reset the usedVerses array
+                if (usedVerses.length === verses.length) {
+                    usedVerses = [];
+                }
+
+                // Log the selected verse for debugging
+                console.log("Random Verse (displayRandomVerse):", randomVerse);
+            } else {
+                // Log that an undefined verse was found
+                console.log("Undefined verse found!");
+
+                //Further log the usedVerses array for debugging
+                console.log("Used Verses (displayRandomVerse):", usedVerses);
+            }
+        
+            // Enable the "Read Chapter" button
+            const readChapterButton = document.getElementById("read-chapter-button");
+            readChapterButton.removeAttribute("disabled");
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const verseDataUrl = 'bible_verses.csv'; // Use a relative path if the .csv file is in the same directory as your HTML file
+            const verseTextElement = document.getElementById("verse-text");
+            const readChapterButton = document.getElementById("read-chapter-button");
+            const showAnotherVerseButton = document.getElementById("show-another-verse-button");
+
+            // Fetch the .csv file
+            fetch(verseDataUrl)
+                .then(response => response.text())
+                .then(data => {
+                    // Split the CSV data into lines
+                    const lines = data.split('\n');
+
+                    // Skip the header row (first line)
+                    for (let i = 1; i < lines.length; i++) {
+                        // Split the line into columns
+                        const [citation, book, chapter, verse, text] = lines[i].split('|');
+
+                        // Create an object for each verse
+                        verses.push({ citation, book, chapter, verse, text });
+                    }
+
+                    // Calculate the day of the year (1-365/366)
+                    const currentDate = new Date();
+                    dayOfYear = Math.floor((currentDate - new Date(currentDate.getFullYear(), 0, 0)) / 86400000);
+
+                    // Set the initial verse after data is loaded
+                    getDailyVerse();
+                })
+                .catch(error => {
+                    console.error('Error fetching .csv file:', error);
+                });
+
+// ...
+if (dailyVerseElement) {
+    const chapterURL = getChapterURL(dailyVerseElement.book, dailyVerseElement.chapter);
+    window.open(chapterURL, "_blank");
+} else {
+    console.error("Daily verse element is undefined:", dailyVerseElement);
+}
+            
+            // Function to select a daily verse based on the date
+            function getDailyVerse() {
+                // Use the day of the year to select a daily verse
+                const dailyVerseIndex = dayOfYear % verses.length;
+                const dailyVerse = verses[dailyVerseIndex];
+
+                console.log("Daily Verse (getDailyVerse):", dailyVerse);
+
+                dailyVerseElement = dailyVerse;
+
+                const verseTextElement = document.getElementById("verse-text");
+                const citationElement = document.getElementById("citation");
+
+                citationElement.innerHTML = dailyVerse.citation;
+                verseTextElement.innerHTML = dailyVerse.text;
+                dailyVerseElement = dailyVerse;
+
+                readChapterButton.removeAttribute("disabled"); // Enable the "Read Chapter" button
+            }
+
+            // Add this code inside your "DOMContentLoaded" event listener
+            showAnotherVerseButton.addEventListener("click", function () {
+                displayRandomVerse();
+            });
+
+            // Add this code inside your "DOMContentLoaded" event listener
+            readChapterButton.addEventListener("click", function () {
+                // Check if dailyVerseElement is defined before reading the chapter
+                if (dailyVerseElement) {
+                    const chapterURL = getChapterURL(dailyVerseElement.book, dailyVerseElement.chapter);
+                    window.open(chapterURL, "_blank");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
